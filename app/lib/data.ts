@@ -12,6 +12,7 @@ import { formatCurrency } from './utils';
 import { unstable_noStore as noStore } from 'next/cache';
 import exp from 'constants';
 
+
 export async function fetchRevenue() {
   // Add noStore() here to prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
@@ -151,6 +152,32 @@ export async function fetchInvoicesPages(query: string) {
   }
 }
 
+export async function fetchInvoiceByCustomer(customer_id: string): Promise<InvoiceForm[]> {
+  noStore();
+  try {
+    const data = await sql<InvoiceForm>`
+      SELECT
+        invoices.id,
+        invoices.amount,
+        invoices.status,
+        invoices.date
+      FROM invoices
+      WHERE invoices.customer_id = ${customer_id}
+    `;
+
+    const invoices = data.rows.map((invoice) => ({
+      ...invoice,
+      // Convert amount from cents to dollars
+      amount: invoice.amount / 100,
+    }));
+
+    return invoices;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoices.');
+  }
+}
+
 export async function fetchInvoiceById(id: string) {
   noStore();
   try {
@@ -178,13 +205,19 @@ export async function fetchInvoiceById(id: string) {
   }
 }
 
-export async function fetchCustomers() {
+type Customer = {
+  id: string;
+  name: string;
+  email: string;
+  image_url: string;
+};
+
+export async function fetchCustomers(): Promise<Customer[]> {
   noStore();
   try {
     const data = await sql<CustomerField>`
       SELECT
-        id,
-        name
+      *
       FROM customers
       ORDER BY name ASC
     `;
