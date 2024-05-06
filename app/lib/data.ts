@@ -215,7 +215,7 @@ type Customer = {
 export async function fetchCustomers(): Promise<Customer[]> {
   noStore();
   try {
-    const data = await sql<CustomerField>`
+    const data = await sql<Customer>`
       SELECT
       *
       FROM customers
